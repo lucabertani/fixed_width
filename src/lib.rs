@@ -1,14 +1,21 @@
 use any_value::{AnyValue, AnyValueTrait};
 use error::FixedWidthError;
-use time::{format_description, macros::format_description};
+use time::format_description;
 
 pub mod any_value;
 pub mod error;
 
 extern crate fixed_width_derive;
 
+pub trait FixedWidth: Sized {
+    fn to_bytes(&self) -> Result<Vec<u8>, FixedWidthError>;
+    fn to_string(&self) -> Result<String, FixedWidthError> {
+        self.to_bytes()
+            .and_then(|bytes| Ok(String::from_utf8(bytes).unwrap()))
+    }
+}
+
 pub fn pad(
-    //bytes: &[u8],
     any_value: &dyn AnyValueTrait,
     size: usize,
     pad: u8,
@@ -19,6 +26,9 @@ pub fn pad(
 ) -> Result<Vec<u8>, FixedWidthError> {
     let any_value = any_value.into_any_value();
 
+    //TODO aggiungere il supporto ai numeri decimali
+    //TODO aggiungere supporto al segno del numero in caso di numeri negativi/positivi
+    //TODO integrare libreria rust bigdecimal, vedi https://crates.io/crates/bigdecimal
     let any_value = match any_value {
         AnyValue::TimeDate(d) => {
             let format = format_description::parse(date_format).unwrap();
@@ -37,7 +47,6 @@ pub fn pad(
         }
         _ => any_value,
     };
-    //let mut bytes = any_value.into_any_value().to_bytes();
     let mut bytes = any_value.to_bytes();
 
     if bytes.len() > size {
@@ -48,8 +57,6 @@ pub fn pad(
         )));
     }
 
-    //let mut v = bytes.to_vec();
-
     for _ in 0..(size - bytes.len()) {
         match pad_left {
             true => bytes.push(pad),
@@ -59,25 +66,3 @@ pub fn pad(
 
     Ok(bytes)
 }
-
-pub trait FixedWidth: Sized {
-    fn to_bytes(&self) -> Result<Vec<u8>, FixedWidthError>;
-    fn to_string(&self) -> Result<String, FixedWidthError> {
-        self.to_bytes()
-            .and_then(|bytes| Ok(String::from_utf8(bytes).unwrap()))
-    }
-    //fn to_string(&self) -> Result<String, FixedRecordLengthError>;
-}
-
-/*#[derive(Clone, Debug)]
-struct Field {
-    size: u32,
-    pad: Pad,
-}
-
-#[derive(Clone, Copy, Debug)]
-enum Pad {
-    Left,
-    Right,
-}
-*/
