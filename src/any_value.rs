@@ -6,8 +6,12 @@ use crate::FixedWidth;
 #[derive(Debug, Clone)]
 pub enum AnyValue {
     String(String),
-    Date(time::Date),
-    DateTime(time::PrimitiveDateTime),
+    TimeDate(time::Date),
+    TimeTime(time::Time),
+    TimeDateTime(time::PrimitiveDateTime),
+    ChronoDate(chrono::NaiveDate),
+    ChronoTime(chrono::NaiveTime),
+    ChronoDateTime(chrono::NaiveDateTime),
     Number(AnyNumber),
     //List(Vec<AnyValue>),
     Bool(bool),
@@ -45,8 +49,6 @@ impl AnyValue {
     pub fn to_string(&self) -> String {
         match self {
             AnyValue::String(s) => s.to_string(),
-            AnyValue::Date(d) => todo!(),
-            AnyValue::DateTime(dt) => todo!(),
             AnyValue::Number(n) => match n {
                 AnyNumber::SmallInt(si) => si.to_string(),
                 AnyNumber::Integer(i) => i.to_string(),
@@ -64,6 +66,7 @@ impl AnyValue {
                 }
                 res
             }
+            _ => todo!(),
         }
         /*match self {
             AnyValue::Sql(s) => Ok(s.to_string()), // used only in internal functions (like increase Version field)
@@ -205,12 +208,32 @@ impl AnyValueTrait for f64 {
 }
 impl AnyValueTrait for time::Date {
     fn into_any_value(&self) -> AnyValue {
-        AnyValue::Date(self.clone())
+        AnyValue::TimeDate(self.clone())
+    }
+}
+impl AnyValueTrait for time::Time {
+    fn into_any_value(&self) -> AnyValue {
+        AnyValue::TimeTime(self.clone())
     }
 }
 impl AnyValueTrait for time::PrimitiveDateTime {
     fn into_any_value(&self) -> AnyValue {
-        AnyValue::DateTime(self.clone())
+        AnyValue::TimeDateTime(self.clone())
+    }
+}
+impl AnyValueTrait for chrono::NaiveDate {
+    fn into_any_value(&self) -> AnyValue {
+        AnyValue::ChronoDate(self.clone())
+    }
+}
+impl AnyValueTrait for chrono::NaiveTime {
+    fn into_any_value(&self) -> AnyValue {
+        AnyValue::ChronoTime(self.clone())
+    }
+}
+impl AnyValueTrait for chrono::NaiveDateTime {
+    fn into_any_value(&self) -> AnyValue {
+        AnyValue::ChronoDateTime(self.clone())
     }
 }
 
