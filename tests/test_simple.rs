@@ -159,7 +159,7 @@ fn padding_right() {
     };
 
     let s: String = t.to_string().unwrap();
-    assert_eq!("     pippo", s);
+    assert_eq!("pippo     ", s);
 }
 
 #[test]
@@ -184,5 +184,5 @@ fn test_multi() {
     };
 
     let s: String = t.to_string().unwrap();
-    assert_eq!("$$$$$pippo****202309", s);
+    assert_eq!("pippo$$$$$202309****", s);
 }

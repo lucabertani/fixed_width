@@ -1,4 +1,6 @@
-use any_value::{AnyValue, AnyValueTrait};
+use any_value::{AnyNumber, AnyValue, AnyValueTrait};
+use bigdecimal::{num_bigint::Sign, RoundingMode, ToPrimitive};
+use chrono::format::format;
 use error::FixedWidthError;
 use time::format_description;
 
@@ -20,6 +22,7 @@ pub fn pad(
     size: usize,
     pad: u8,
     pad_left: bool,
+    decimals: usize,
     date_format: &str,
     time_format: &str,
     date_time_format: &str,
@@ -45,6 +48,40 @@ pub fn pad(
             let formatted = dt.format(&format).unwrap();
             AnyValue::String(formatted)
         }
+        AnyValue::Number(AnyNumber::BigDecimal(bd)) => {
+            let bd_copy = bd.clone();
+            let mut value;
+            if decimals > 0 {
+                let decimals = decimals - 1; // need space to sign
+
+                let value_int = bd.to_i64().ok_or(FixedWidthError::new(format!(
+                    "Unable to extract integer part of {}",
+                    bd
+                )))?;
+                let value_decimals = bd - value_int;
+                let value_decimals =
+                    value_decimals.with_scale_round(decimals as i64, RoundingMode::HalfUp);
+
+                let value_decimals_str = value_decimals.to_string();
+                let mut value_decimals_str = value_decimals_str[2..].to_string();
+
+                for _ in 0..(decimals - value_decimals_str.len()) {
+                    value_decimals_str.push_str("0");
+                }
+
+                //AnyValue::String(bd.to_string())
+                value = format!("{}{}", value_int, value_decimals_str);
+            } else {
+                value = bd.to_string();
+            }
+
+            match bd_copy.sign() {
+                Sign::NoSign | Sign::Plus => value.push_str("+"),
+                Sign::Minus => value.push_str("-"),
+            };
+
+            AnyValue::String(value)
+        }
         _ => any_value,
     };
     let mut bytes = any_value.to_bytes();
@@ -59,8 +96,8 @@ pub fn pad(
 
     for _ in 0..(size - bytes.len()) {
         match pad_left {
-            true => bytes.push(pad),
-            false => bytes.insert(0, pad),
+            true => bytes.insert(0, pad),
+            false => bytes.push(pad),
         }
     }
 

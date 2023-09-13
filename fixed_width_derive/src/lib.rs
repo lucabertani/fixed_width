@@ -28,6 +28,8 @@ struct FixedWidthField {
     pad: char,
     #[darling(default = "pad_left_default")]
     pad_left: bool,
+    #[darling(default = "decimals_default")]
+    decimals: usize,
     #[darling(default = "date_format_default")]
     date_format: String,
     #[darling(default = "time_format_default")]
@@ -40,7 +42,10 @@ fn pad_default() -> char {
     ' '
 }
 fn pad_left_default() -> bool {
-    true
+    false
+}
+fn decimals_default() -> usize {
+    0
 }
 fn date_format_default() -> String {
     "[year][month][day]".into()
@@ -91,6 +96,10 @@ impl FixedWidthField {
         self.pad_left
     }
 
+    fn decimals(&self) -> usize {
+        self.decimals
+    }
+
     fn date_format(&self) -> &str {
         self.date_format.as_ref()
     }
@@ -127,12 +136,13 @@ pub fn derive(input: TokenStream) -> TokenStream {
         let size = field.size();
         let pad = field.pad() as u8;
         let pad_left = field.pad_left();
+        let decimals = field.decimals();
         let date_format = field.date_format();
         let time_format = field.time_format();
         let date_time_format = field.date_time_format();
 
         let convert = quote! {
-            let mut v = fixed_width::pad(&self.#field_name, #size, #pad, #pad_left, #date_format, #time_format, #date_time_format)?;
+            let mut v = fixed_width::pad(&self.#field_name, #size, #pad, #pad_left, #decimals, #date_format, #time_format, #date_time_format)?;
             res.append(&mut v);
         };
         fields.push(convert);

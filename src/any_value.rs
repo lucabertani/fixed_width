@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use bigdecimal::BigDecimal;
+
 use crate::FixedWidth;
 
 // struct for keep a value of most used type
@@ -22,8 +24,9 @@ pub enum AnyNumber {
     SmallInt(i16),
     Integer(i32),
     BigInteger(i64),
-    Float(f32),
-    Real(f64),
+    BigDecimal(BigDecimal),
+    //Float(f32),
+    //Real(f64),
 }
 
 impl AnyValue {
@@ -40,8 +43,9 @@ impl AnyValue {
                 AnyNumber::SmallInt(si) => si.to_string(),
                 AnyNumber::Integer(i) => i.to_string(),
                 AnyNumber::BigInteger(bi) => bi.to_string(),
-                AnyNumber::Float(f) => f.to_string(),
-                AnyNumber::Real(r) => r.to_string(),
+                AnyNumber::BigDecimal(bi) => bi.to_string(),
+                /*AnyNumber::Float(f) => f.to_string(),
+                AnyNumber::Real(r) => r.to_string(),*/
             },
             AnyValue::Bool(b) => format!("{}", i16::from(*b)),
             AnyValue::Null(_) => String::new(),
@@ -110,9 +114,14 @@ impl AnyValueTrait for u32 {
         AnyValue::Number(AnyNumber::Integer(*self as i32))
     }
 }
-impl AnyValueTrait for f32 {
+/*impl AnyValueTrait for f32 {
     fn into_any_value(&self) -> AnyValue {
         AnyValue::Number(AnyNumber::Float(*self))
+    }
+}*/
+impl AnyValueTrait for BigDecimal {
+    fn into_any_value(&self) -> AnyValue {
+        AnyValue::Number(AnyNumber::BigDecimal(self.clone()))
     }
 }
 impl AnyValueTrait for i64 {
@@ -133,11 +142,11 @@ impl AnyValueTrait for u64 {
         AnyValue::Number(AnyNumber::BigInteger(*self as i64))
     }
 }
-impl AnyValueTrait for f64 {
+/*impl AnyValueTrait for f64 {
     fn into_any_value(&self) -> AnyValue {
         AnyValue::Number(AnyNumber::Real(*self))
     }
-}
+}*/
 impl AnyValueTrait for time::Date {
     fn into_any_value(&self) -> AnyValue {
         AnyValue::TimeDate(self.clone())

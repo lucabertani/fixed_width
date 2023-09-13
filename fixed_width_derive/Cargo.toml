@@ -14,8 +14,11 @@ proc-macro2 = "1.0.66"
 quote = "1.0.33"
 strum = { version = "0.25.0", features = ["derive"] }
 syn = { version = "2.0.31", features = ["full"] }
-chrono = "0.4.30"
-time = "0.3.28"
+
+# data type
+chrono = "0.4"
+time = "0.3"
+bigdecimal = "0.4"
 
 #quote = "1.0.33"
 #syn = { version = "2.0.31", features = ["full"] }
