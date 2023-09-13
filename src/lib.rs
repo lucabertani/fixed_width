@@ -1,15 +1,14 @@
-use any_value::{AnyNumber, AnyValue, AnyValueTrait};
-use bigdecimal::{num_bigint::Sign, RoundingMode, ToPrimitive};
-use chrono::format::format;
+use any_value::AnyValueTrait;
 use error::FixedWidthError;
-use time::format_description;
+use model::field_config::FieldConfig;
 
 pub mod any_value;
 pub mod error;
+pub mod model;
 
 extern crate fixed_width_derive;
 
-pub trait FixedWidth: Sized {
+pub trait FixedWidth: Send + Sync {
     fn to_bytes(&self) -> Result<Vec<u8>, FixedWidthError>;
     fn to_string(&self) -> Result<String, FixedWidthError> {
         self.to_bytes()
@@ -19,6 +18,7 @@ pub trait FixedWidth: Sized {
 
 pub fn pad(
     any_value: &dyn AnyValueTrait,
+    field_name: &str,
     size: usize,
     pad: u8,
     pad_left: bool,
@@ -27,12 +27,22 @@ pub fn pad(
     time_format: &str,
     date_time_format: &str,
 ) -> Result<Vec<u8>, FixedWidthError> {
-    let any_value = any_value.into_any_value();
+    let any_value = any_value.into_any_value()?;
+    let field_config = FieldConfig::new(
+        field_name,
+        size,
+        pad,
+        pad_left,
+        decimals,
+        date_format,
+        time_format,
+        date_time_format,
+    );
 
     //TODO aggiungere il supporto ai numeri decimali
     //TODO aggiungere supporto al segno del numero in caso di numeri negativi/positivi
     //TODO integrare libreria rust bigdecimal, vedi https://crates.io/crates/bigdecimal
-    let any_value = match any_value {
+    /*let any_value = match any_value {
         AnyValue::TimeDate(d) => {
             let format = format_description::parse(date_format).unwrap();
             let formatted = d.format(&format).unwrap();
@@ -84,13 +94,16 @@ pub fn pad(
         }
         _ => any_value,
     };
-    let mut bytes = any_value.to_bytes();
+    let mut bytes = any_value.to_bytes();*/
+
+    let mut bytes = any_value.to_bytes(field_config)?;
 
     if bytes.len() > size {
+        let len = bytes.len();
+        let value = String::from_utf8(bytes).unwrap_or(String::new());
         return Err(FixedWidthError::new(format!(
-            "Expected size {}, got {} instead",
-            size,
-            bytes.len()
+            "Expected size {}, got {} instead for value '{}' in field '{}'",
+            size, len, value, field_name,
         )));
     }
 

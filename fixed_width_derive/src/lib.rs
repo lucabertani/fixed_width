@@ -132,7 +132,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
     for field in fw.data.take_struct().unwrap() {
         let field_name = field.field_name();
 
-        let field_name: proc_macro2::TokenStream = field_name.parse().unwrap();
+        let field_name_ts: proc_macro2::TokenStream = field_name.parse().unwrap();
         let size = field.size();
         let pad = field.pad() as u8;
         let pad_left = field.pad_left();
@@ -142,7 +142,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
         let date_time_format = field.date_time_format();
 
         let convert = quote! {
-            let mut v = fixed_width::pad(&self.#field_name, #size, #pad, #pad_left, #decimals, #date_format, #time_format, #date_time_format)?;
+            let mut v = fixed_width::pad(&self.#field_name_ts, #field_name, #size, #pad, #pad_left, #decimals, #date_format, #time_format, #date_time_format)?;
             res.append(&mut v);
         };
         fields.push(convert);

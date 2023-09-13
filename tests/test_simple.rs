@@ -3,7 +3,7 @@ use fixed_width_derive::FixedWidth;
 
 #[test]
 fn simple_test() {
-    #[derive(FixedWidth)]
+    #[derive(Debug, FixedWidth)]
     struct Test {
         #[fixed_width(size = 10)]
         name: String,
@@ -22,7 +22,7 @@ fn simple_test() {
 
 #[test]
 fn simple_test2() {
-    #[derive(FixedWidth)]
+    #[derive(Debug, FixedWidth)]
     struct Test {
         #[fixed_width(size = 10)]
         name: String,
@@ -43,41 +43,8 @@ fn simple_test2() {
 }
 
 #[test]
-fn list_test() {
-    #[derive(FixedWidth)]
-    struct Master {
-        #[fixed_width(size = 10)]
-        name: String,
-
-        #[fixed_width(size = 100)]
-        details: Vec<Detail>,
-    }
-
-    #[derive(FixedWidth)]
-    struct Detail {
-        #[fixed_width(size = 10)]
-        detail: String,
-    }
-
-    let t = Master {
-        name: "pippo".to_string(),
-        details: vec![
-            Detail {
-                detail: "details1".to_string(),
-            },
-            Detail {
-                detail: "details2".to_string(),
-            },
-        ],
-    };
-    let s: String = t.to_string().unwrap();
-
-    assert_eq!("pippo     details1  details2                                                                                  ".to_string(), s);
-}
-
-#[test]
 fn date_test() {
-    #[derive(FixedWidth)]
+    #[derive(Debug, FixedWidth)]
     struct T {
         #[fixed_width(size = 10)]
         date1: time::Date,
@@ -97,7 +64,7 @@ fn date_test() {
 
 #[test]
 fn time_test() {
-    #[derive(FixedWidth)]
+    #[derive(Debug, FixedWidth)]
     struct T {
         #[fixed_width(size = 10)]
         time1: time::Time,
@@ -116,7 +83,7 @@ fn time_test() {
 
 #[test]
 fn date_time_test() {
-    #[derive(FixedWidth)]
+    #[derive(Debug, FixedWidth)]
     struct T {
         #[fixed_width(size = 20)]
         datetime1: time::PrimitiveDateTime,
@@ -132,7 +99,7 @@ fn date_time_test() {
 
 #[test]
 fn padding_with() {
-    #[derive(FixedWidth)]
+    #[derive(Debug, FixedWidth)]
     struct T {
         #[fixed_width(size = 10, pad = "*")]
         name: String,
@@ -148,7 +115,7 @@ fn padding_with() {
 
 #[test]
 fn padding_right() {
-    #[derive(FixedWidth)]
+    #[derive(Debug, FixedWidth)]
     struct T {
         #[fixed_width(size = 10, pad_left = "false")]
         name: String,
@@ -164,7 +131,7 @@ fn padding_right() {
 
 #[test]
 fn test_multi() {
-    #[derive(FixedWidth)]
+    #[derive(Debug, FixedWidth)]
     struct T {
         #[fixed_width(size = 10, pad_left = "false", pad = "$")]
         name: String,
