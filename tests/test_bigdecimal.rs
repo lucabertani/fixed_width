@@ -1,6 +1,5 @@
 use bigdecimal::{BigDecimal, FromPrimitive, ToPrimitive};
 use fixed_width::FixedWidth;
-use fixed_width_derive::FixedWidth;
 
 #[test]
 fn test_various() {
@@ -27,7 +26,7 @@ fn bigdecimal_test() {
     let t = Test {
         number: BigDecimal::from_f64(23.45).unwrap(),
     };
-    let s: String = t.to_string().unwrap();
+    let s: String = t.to_fixed_width_string().unwrap();
 
     assert_eq!("     2345+".to_string(), s);
 }

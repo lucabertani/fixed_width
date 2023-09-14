@@ -1,5 +1,4 @@
 use fixed_width::FixedWidth;
-use fixed_width_derive::FixedWidth;
 
 #[test]
 fn list_test_simple() {
@@ -29,9 +28,9 @@ fn list_test_simple() {
             },
         ],
     };
-    let s: String = t.to_string().unwrap();
+    let s: String = t.to_fixed_width_string().unwrap();
 
-    assert_eq!("pippo     details1  details2                                                                                  ".to_string(), s);
+    assert_eq!("     pippo                                                                                  details1  details2".to_string(), s);
 }
 
 #[test]
@@ -87,7 +86,7 @@ fn list_test_complex() {
             },
         ],
     };
-    let s: String = t.to_string().unwrap();
+    let s: String = t.to_fixed_width_string().unwrap();
 
-    assert_eq!("pippo     details1  sub_details1   sub_details2   details2  sub_details3   sub_details4                       ".to_string(), s);
+    assert_eq!("     pippo                      details1   sub_details1   sub_details2  details2   sub_details3   sub_details4".to_string(), s);
 }

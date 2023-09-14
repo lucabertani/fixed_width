@@ -1,12 +1,10 @@
-use std::path::PathBuf;
-
 use bigdecimal::{num_bigint::Sign, BigDecimal, FromPrimitive, RoundingMode, ToPrimitive};
 use time::format_description;
 
 use crate::{
     error::{Context, FixedWidthError},
     model::field_config::FieldConfig,
-    FixedWidth,
+    FixedWidth, FixedWidthEnum,
 };
 
 // struct for keep a value of most used type
@@ -61,9 +59,18 @@ impl AnyValue {
                 let formatted = dt.format(&format)?;
                 Ok(formatted.as_bytes().to_vec())
             }
-            AnyValue::ChronoDate(_) => todo!(),
-            AnyValue::ChronoTime(_) => todo!(),
-            AnyValue::ChronoDateTime(_) => todo!(),
+            AnyValue::ChronoDate(d) => {
+                let formatted = d.format(field_config.date_format());
+                Ok(formatted.to_string().as_bytes().to_vec())
+            }
+            AnyValue::ChronoTime(t) => {
+                let formatted = t.format(field_config.time_format());
+                Ok(formatted.to_string().as_bytes().to_vec())
+            }
+            AnyValue::ChronoDateTime(dt) => {
+                let formatted = dt.format(field_config.date_time_format());
+                Ok(formatted.to_string().as_bytes().to_vec())
+            }
             AnyValue::Number(n) => match n {
                 /*AnyNumber::SmallInt(si) => {
                     let bd = BigDecimal::from_i16(si)
@@ -189,17 +196,17 @@ impl AnyValueTrait for AnyValueNull {
     }
 }
 
-impl AnyValueTrait for PathBuf {
-    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
-        Ok(AnyValue::String(
-            self.to_string_lossy().as_ref().to_string(),
-        ))
-    }
-}
-
 impl AnyValueTrait for &str {
     fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
         Ok(AnyValue::String(self.to_string()))
+    }
+}
+impl AnyValueTrait for Option<&str> {
+    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
+        match self {
+            Some(v) => Ok(AnyValue::String(v.to_string())),
+            None => Ok(AnyValue::Null(None)),
+        }
     }
 }
 impl AnyValueTrait for String {
@@ -207,9 +214,25 @@ impl AnyValueTrait for String {
         Ok(AnyValue::String(self.clone()))
     }
 }
+impl AnyValueTrait for Option<String> {
+    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
+        match self {
+            Some(v) => Ok(AnyValue::String(v.to_string())),
+            None => Ok(AnyValue::Null(None)),
+        }
+    }
+}
 impl AnyValueTrait for u16 {
     fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
         Ok(AnyValue::Number(AnyNumber::SmallInt(*self as i16)))
+    }
+}
+impl AnyValueTrait for Option<u16> {
+    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
+        match self {
+            Some(v) => Ok(AnyValue::Number(AnyNumber::SmallInt(*v as i16))),
+            None => Ok(AnyValue::Null(None)),
+        }
     }
 }
 impl AnyValueTrait for i16 {
@@ -217,9 +240,25 @@ impl AnyValueTrait for i16 {
         Ok(AnyValue::Number(AnyNumber::SmallInt(*self)))
     }
 }
+impl AnyValueTrait for Option<i16> {
+    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
+        match self {
+            Some(v) => Ok(AnyValue::Number(AnyNumber::SmallInt(*v))),
+            None => Ok(AnyValue::Null(None)),
+        }
+    }
+}
 impl AnyValueTrait for i32 {
     fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
         Ok(AnyValue::Number(AnyNumber::Integer(*self)))
+    }
+}
+impl AnyValueTrait for Option<i32> {
+    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
+        match self {
+            Some(v) => Ok(AnyValue::Number(AnyNumber::Integer(*v))),
+            None => Ok(AnyValue::Null(None)),
+        }
     }
 }
 impl AnyValueTrait for u32 {
@@ -227,14 +266,25 @@ impl AnyValueTrait for u32 {
         Ok(AnyValue::Number(AnyNumber::Integer(*self as i32)))
     }
 }
+impl AnyValueTrait for Option<u32> {
+    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
+        match self {
+            Some(v) => Ok(AnyValue::Number(AnyNumber::Integer(*v as i32))),
+            None => Ok(AnyValue::Null(None)),
+        }
+    }
+}
 impl AnyValueTrait for f32 {
     fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
         Ok(AnyValue::Number(AnyNumber::Float(*self)))
     }
 }
-impl AnyValueTrait for BigDecimal {
+impl AnyValueTrait for Option<f32> {
     fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
-        Ok(AnyValue::Number(AnyNumber::BigDecimal(self.clone())))
+        match self {
+            Some(v) => Ok(AnyValue::Number(AnyNumber::Float(*v))),
+            None => Ok(AnyValue::Null(None)),
+        }
     }
 }
 impl AnyValueTrait for i64 {
@@ -255,14 +305,51 @@ impl AnyValueTrait for u64 {
         Ok(AnyValue::Number(AnyNumber::BigInteger(*self as i64)))
     }
 }
-/*impl AnyValueTrait for f64 {
+impl AnyValueTrait for Option<u64> {
     fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
-        AnyValue::Number(AnyNumber::Real(*self))
+        match self {
+            Some(v) => Ok(AnyValue::Number(AnyNumber::BigInteger(*v as i64))),
+            None => Ok(AnyValue::Null(None)),
+        }
     }
-}*/
+}
+impl AnyValueTrait for f64 {
+    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
+        Ok(AnyValue::Number(AnyNumber::Real(*self)))
+    }
+}
+impl AnyValueTrait for Option<f64> {
+    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
+        match self {
+            Some(v) => Ok(AnyValue::Number(AnyNumber::Real(*v))),
+            None => Ok(AnyValue::Null(None)),
+        }
+    }
+}
+impl AnyValueTrait for BigDecimal {
+    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
+        Ok(AnyValue::Number(AnyNumber::BigDecimal(self.clone())))
+    }
+}
+impl AnyValueTrait for Option<BigDecimal> {
+    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
+        match self {
+            Some(v) => Ok(AnyValue::Number(AnyNumber::BigDecimal(v.clone()))),
+            None => Ok(AnyValue::Null(None)),
+        }
+    }
+}
 impl AnyValueTrait for time::Date {
     fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
         Ok(AnyValue::TimeDate(self.clone()))
+    }
+}
+impl AnyValueTrait for Option<time::Date> {
+    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
+        match self {
+            Some(v) => Ok(AnyValue::TimeDate(v.clone())),
+            None => Ok(AnyValue::Null(None)),
+        }
     }
 }
 impl AnyValueTrait for time::Time {
@@ -270,9 +357,25 @@ impl AnyValueTrait for time::Time {
         Ok(AnyValue::TimeTime(self.clone()))
     }
 }
+impl AnyValueTrait for Option<time::Time> {
+    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
+        match self {
+            Some(v) => Ok(AnyValue::TimeTime(v.clone())),
+            None => Ok(AnyValue::Null(None)),
+        }
+    }
+}
 impl AnyValueTrait for time::PrimitiveDateTime {
     fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
         Ok(AnyValue::TimeDateTime(self.clone()))
+    }
+}
+impl AnyValueTrait for Option<time::PrimitiveDateTime> {
+    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
+        match self {
+            Some(v) => Ok(AnyValue::TimeDateTime(v.clone())),
+            None => Ok(AnyValue::Null(None)),
+        }
     }
 }
 impl AnyValueTrait for chrono::NaiveDate {
@@ -280,9 +383,25 @@ impl AnyValueTrait for chrono::NaiveDate {
         Ok(AnyValue::ChronoDate(self.clone()))
     }
 }
+impl AnyValueTrait for Option<chrono::NaiveDate> {
+    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
+        match self {
+            Some(v) => Ok(AnyValue::ChronoDate(v.clone())),
+            None => Ok(AnyValue::Null(None)),
+        }
+    }
+}
 impl AnyValueTrait for chrono::NaiveTime {
     fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
         Ok(AnyValue::ChronoTime(self.clone()))
+    }
+}
+impl AnyValueTrait for Option<chrono::NaiveTime> {
+    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
+        match self {
+            Some(v) => Ok(AnyValue::ChronoTime(v.clone())),
+            None => Ok(AnyValue::Null(None)),
+        }
     }
 }
 impl AnyValueTrait for chrono::NaiveDateTime {
@@ -290,10 +409,47 @@ impl AnyValueTrait for chrono::NaiveDateTime {
         Ok(AnyValue::ChronoDateTime(self.clone()))
     }
 }
-
+impl AnyValueTrait for Option<chrono::NaiveDateTime> {
+    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
+        match self {
+            Some(v) => Ok(AnyValue::ChronoDateTime(v.clone())),
+            None => Ok(AnyValue::Null(None)),
+        }
+    }
+}
 impl AnyValueTrait for bool {
     fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
         Ok(AnyValue::Bool(*self))
+    }
+}
+impl AnyValueTrait for Option<bool> {
+    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
+        match self {
+            Some(v) => Ok(AnyValue::Bool(v.clone())),
+            None => Ok(AnyValue::Null(None)),
+        }
+    }
+}
+
+// generic
+impl<T> AnyValueTrait for T
+where
+    T: FixedWidthEnum,
+{
+    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
+        Ok(AnyValue::String(self.key()))
+    }
+}
+
+impl<T> AnyValueTrait for Option<T>
+where
+    T: FixedWidthEnum,
+{
+    fn into_any_value(&self) -> Result<AnyValue, FixedWidthError> {
+        match self {
+            Some(v) => Ok(AnyValue::String(v.key())),
+            None => Ok(AnyValue::Null(None)),
+        }
     }
 }
 
@@ -305,7 +461,7 @@ where
         //let mut results = Vec::new();
         let mut bytes = Vec::new();
         for el in self {
-            let mut b = el.to_bytes()?;
+            let mut b = el.to_fixed_width_bytes()?;
             bytes.append(&mut b);
         }
 

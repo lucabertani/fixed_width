@@ -1,4 +1,4 @@
-use darling::{ast, util, FromDeriveInput, FromField};
+use darling::{ast, util, FromDeriveInput, FromField, FromVariant};
 use proc_macro::TokenStream;
 use quote::quote;
 use strum::EnumString;
@@ -42,7 +42,7 @@ fn pad_default() -> char {
     ' '
 }
 fn pad_left_default() -> bool {
-    false
+    true
 }
 fn decimals_default() -> usize {
     0
@@ -150,7 +150,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
 
     let output: proc_macro2::TokenStream = quote! {
         impl FixedWidth for #ident {
-            fn to_bytes(&self) -> Result<Vec<u8>, fixed_width::error::FixedWidthError> {
+            fn to_fixed_width_bytes(&self) -> Result<Vec<u8>, fixed_width::error::FixedWidthError> {
                 let mut s = String::new();
                 let mut res: Vec<u8> = Vec::new();
                 #(#fields)*
@@ -160,4 +160,106 @@ pub fn derive(input: TokenStream) -> TokenStream {
     };
 
     output.into()
+}
+
+// FIXED WIDTH ENUM DERIVE
+
+/*#[derive(Debug, FromDeriveInput)]
+#[darling(supports(enum_any))]
+struct FixedWidthEnumFields {
+    ident: Ident,
+    data: ast::Data<util::Ignored, FixedWidthEnumField>,
+}*/
+
+//#[darling(default)]
+//skip: bool,
+
+#[derive(Debug, FromVariant)]
+#[darling(from_ident, attributes(hello))]
+#[allow(dead_code)]
+struct FixedWidthEnumField {
+    ident: syn::Ident,
+    into: Option<bool>,
+    skip: Option<bool>,
+    discriminant: Option<syn::Expr>,
+    fields: darling::ast::Fields<syn::Type>,
+}
+impl From<syn::Ident> for FixedWidthEnumField {
+    fn from(ident: syn::Ident) -> Self {
+        FixedWidthEnumField {
+            ident,
+            into: Default::default(),
+            skip: Default::default(),
+            discriminant: None,
+            fields: darling::ast::Style::Unit.into(),
+        }
+    }
+}
+
+/*impl FixedWidthEnumField {
+    fn field_name(&self) -> String {
+        self.ident()
+            .and_then(|i| Some(i.to_string()))
+            .unwrap_or(String::new())
+    }
+
+    /*fn field_type(&self) -> FieldType {
+        if let Type::Path(path) = self.ty() {
+            let field_type = &path.path.segments.first().unwrap().ident;
+            let field_type_enum = FieldType::from_str(field_type.to_string().as_str()).expect(
+                format!("Unable to parse {} into FieldType", field_type.to_string()).as_str(),
+            );
+            field_type_enum
+        } else {
+            panic!("Unexpected type: {:?}", self.ty());
+        }
+    }*/
+
+    fn ident(&self) -> Option<&Ident> {
+        self.ident.as_ref()
+    }
+
+    /*fn ty(&self) -> &Type {
+        &self.ty
+    }*/
+}*/
+
+#[proc_macro_derive(FixedWidthEnum)]
+pub fn derive_fixed_width_enum(input: TokenStream) -> TokenStream {
+    let input: DeriveInput = parse_macro_input!(input);
+    //println!("Derive: {:#?}", input);
+    //let fw: FixedWidthEnumFields = FixedWidthEnumFields::from_derive_input(&input).unwrap();
+    //println!("FWWW: {:#?}", fw);
+
+    let ident = input.ident;
+    if let syn::Data::Enum(enm) = input.data {
+        let mut fields: Vec<proc_macro2::TokenStream> = Vec::new();
+        for variant in enm.variants {
+            let field = FixedWidthEnumField::from_variant(&variant).unwrap();
+            //println!("A: {:#?}", field);
+
+            let field_name = field.ident.to_string();
+            let field_name_ts: proc_macro2::TokenStream = field_name.parse().unwrap();
+
+            let convert = quote! {
+                Self::#field_name_ts => String::from(#field_name),
+            };
+
+            fields.push(convert);
+        }
+
+        let output: proc_macro2::TokenStream = quote! {
+            impl FixedWidthEnum for #ident {
+                fn key(&self) -> String {
+                    match self {
+                        #(#fields)*
+                    }
+                }
+            }
+        };
+
+        output.into()
+    } else {
+        panic!("Expect enum, got {:#?}", ident);
+    }
 }

@@ -4,7 +4,7 @@ pub struct FieldConfig {
     pad: u8,
     pad_left: bool,
     decimals: usize,
-    date_format: String,
+    date_format: String, //TODO require field when a Date is passed
     time_format: String,
     date_time_format: String,
 }

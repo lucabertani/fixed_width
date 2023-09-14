@@ -1,5 +1,4 @@
 use fixed_width::FixedWidth;
-use fixed_width_derive::FixedWidth;
 
 #[test]
 fn simple_test() {
@@ -15,9 +14,9 @@ fn simple_test() {
         name: "pippo".to_string(),
         description: "pippo descrizione".to_string(),
     };
-    let s: String = t.to_string().unwrap();
+    let s: String = t.to_fixed_width_string().unwrap();
 
-    assert_eq!("pippo     pippo descrizione   ".to_string(), s);
+    assert_eq!("     pippo   pippo descrizione".to_string(), s);
 }
 
 #[test]
@@ -37,9 +36,9 @@ fn simple_test2() {
         description: "pippo descrizione".to_string(),
         age: 25,
     };
-    let s: String = t.to_string().unwrap();
+    let s: String = t.to_fixed_width_string().unwrap();
 
-    assert_eq!("pippo     pippo descrizione   25   ".to_string(), s);
+    assert_eq!("     pippo   pippo descrizione   25".to_string(), s);
 }
 
 #[test]
@@ -58,8 +57,8 @@ fn date_test() {
         date2: time::macros::date!(2023 - 09 - 11),
     };
 
-    let s: String = t.to_string().unwrap();
-    assert_eq!("20230911  202309    ", s);
+    let s: String = t.to_fixed_width_string().unwrap();
+    assert_eq!("  20230911    202309", s);
 }
 
 #[test]
@@ -77,8 +76,8 @@ fn time_test() {
         time2: time::macros::time!(23:59:59),
     };
 
-    let s: String = t.to_string().unwrap();
-    assert_eq!("135900    23-59-59  ", s);
+    let s: String = t.to_fixed_width_string().unwrap();
+    assert_eq!("    135900  23-59-59", s);
 }
 
 #[test]
@@ -93,8 +92,8 @@ fn date_time_test() {
         datetime1: time::macros::datetime!(2023 - 09 - 11 13:59),
     };
 
-    let s: String = t.to_string().unwrap();
-    assert_eq!("20230911 135900     ", s);
+    let s: String = t.to_fixed_width_string().unwrap();
+    assert_eq!("     20230911 135900", s);
 }
 
 #[test]
@@ -109,8 +108,8 @@ fn padding_with() {
         name: "pippo".to_string(),
     };
 
-    let s: String = t.to_string().unwrap();
-    assert_eq!("pippo*****", s);
+    let s: String = t.to_fixed_width_string().unwrap();
+    assert_eq!("*****pippo", s);
 }
 
 #[test]
@@ -125,7 +124,7 @@ fn padding_right() {
         name: "pippo".to_string(),
     };
 
-    let s: String = t.to_string().unwrap();
+    let s: String = t.to_fixed_width_string().unwrap();
     assert_eq!("pippo     ", s);
 }
 
@@ -150,6 +149,6 @@ fn test_multi() {
         date1: time::macros::date!(2023 - 09 - 11),
     };
 
-    let s: String = t.to_string().unwrap();
+    let s: String = t.to_fixed_width_string().unwrap();
     assert_eq!("pippo$$$$$202309****", s);
 }

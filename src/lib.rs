@@ -6,14 +6,21 @@ pub mod any_value;
 pub mod error;
 pub mod model;
 
+// queste 2 linee consentono di caricare la macro FixedWidth allo stesso livello del trait FixedWidth
 extern crate fixed_width_derive;
+pub use fixed_width_derive::FixedWidth;
+pub use fixed_width_derive::FixedWidthEnum;
 
 pub trait FixedWidth: Send + Sync {
-    fn to_bytes(&self) -> Result<Vec<u8>, FixedWidthError>;
-    fn to_string(&self) -> Result<String, FixedWidthError> {
-        self.to_bytes()
+    fn to_fixed_width_bytes(&self) -> Result<Vec<u8>, FixedWidthError>;
+    fn to_fixed_width_string(&self) -> Result<String, FixedWidthError> {
+        self.to_fixed_width_bytes()
             .and_then(|bytes| Ok(String::from_utf8(bytes).unwrap()))
     }
+}
+
+pub trait FixedWidthEnum: Send + Sync {
+    fn key(&self) -> String;
 }
 
 pub fn pad(
